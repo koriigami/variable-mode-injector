@@ -26,7 +26,7 @@ async function loadCollections() {
   figma.ui.postMessage({ type: 'load-collections', data: simplifiedCollections });
 }
 
-figma.showUI(__html__, { width: 340, height: 450 });
+figma.showUI(__html__, { width: 380, height: 600 });
 loadCollections();
 
 // 2. Handle Messages

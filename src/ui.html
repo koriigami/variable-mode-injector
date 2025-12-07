@@ -5,98 +5,691 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Variable Mode Injector</title>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            padding: 16px;
-            margin: 0;
-            color: #333;
-            background-color: #fff;
+        /* shadcn/ui inspired design system */
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 221.2 83.2% 53.3%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 221.2 83.2% 53.3%;
+            --radius: 0.5rem;
         }
-        h2 { font-size: 14px; margin-bottom: 12px; }
-        label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; color: #555; }
-        select, input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 16px;
-            border: 1px solid #e1e1e1;
-            border-radius: 4px;
-            font-size: 12px;
+
+        * {
             box-sizing: border-box;
         }
-        textarea { height: 120px; font-family: monospace; }
-        button {
-            width: 100%;
-            background-color: #18A0FB;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-size: 14px;
+            line-height: 1.5;
         }
-        button:hover { background-color: #0d8ce6; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        .hint { font-size: 10px; color: #888; margin-top: -12px; margin-bottom: 12px; }
+
+        /* Label styling */
+        .label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: hsl(var(--foreground));
+        }
+
+        /* Input/Select base styling */
+        .input, .select, .textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid hsl(var(--border));
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 13px;
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            transition: all 0.2s;
+        }
+
+        .input:focus, .select:focus, .textarea:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.2);
+        }
+
+        .input::placeholder, .textarea::placeholder {
+            color: hsl(var(--muted-foreground));
+        }
+
+        .textarea {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Form group spacing */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        /* Button styling (shadcn primary button) */
+        .btn {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            background: hsl(var(--primary) / 0.9);
+        }
+
+        .btn-primary:disabled {
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            cursor: not-allowed;
+        }
+
+        /* Drop zone styling (shadcn card + border) */
+        .drop-zone {
+            border: 2px dashed hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 32px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+            background: hsl(var(--muted) / 0.3);
+        }
+
+        .drop-zone:hover {
+            border-color: hsl(var(--ring));
+            background: hsl(var(--muted) / 0.5);
+        }
+
+        .drop-zone.dragging {
+            border-color: hsl(var(--primary));
+            background: hsl(var(--primary) / 0.1);
+        }
+
+        .drop-zone-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .drop-zone-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+            color: hsl(var(--foreground));
+        }
+
+        .drop-zone-hint {
+            font-size: 12px;
+            color: hsl(var(--muted-foreground));
+        }
+
+        /* File indicator badge */
+        .file-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: hsl(var(--secondary));
+            border-radius: calc(var(--radius) - 2px);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .file-badge-remove {
+            background: none;
+            border: none;
+            color: hsl(var(--muted-foreground));
+            cursor: pointer;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .file-badge-remove:hover {
+            color: hsl(var(--foreground));
+        }
+
+        /* Preview card */
+        .preview-card {
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            padding: 12px;
+            margin-bottom: 16px;
+            background: hsl(var(--card));
+        }
+
+        .preview-title {
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .preview-count {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: hsl(var(--foreground));
+        }
+
+        .preview-item {
+            font-size: 12px;
+            padding: 4px 0;
+            color: hsl(var(--foreground));
+            font-family: ui-monospace, SFMono-Regular, monospace;
+        }
+
+        .preview-item code {
+            color: hsl(var(--primary));
+            background: hsl(var(--muted));
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        /* Alert (for errors/success) */
+        .alert {
+            padding: 12px;
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .alert-error {
+            background: hsl(var(--destructive) / 0.1);
+            color: hsl(var(--destructive));
+            border: 1px solid hsl(var(--destructive) / 0.3);
+        }
+
+        .alert-success {
+            background: hsl(142.1 76.2% 36.3% / 0.1);
+            color: hsl(142.1 76.2% 36.3%);
+            border: 1px solid hsl(142.1 76.2% 36.3% / 0.3);
+        }
+
+        /* Hidden utility */
+        .hidden {
+            display: none;
+        }
+
+        /* Separator */
+        .separator {
+            height: 1px;
+            background: hsl(var(--border));
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .separator-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: hsl(var(--background));
+            padding: 0 12px;
+            font-size: 11px;
+            color: hsl(var(--muted-foreground));
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid hsl(var(--primary) / 0.3);
+            border-top-color: hsl(var(--primary));
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
 
-    <label for="collectionSelect">Select Collection</label>
-    <select id="collectionSelect">
-        <option value="" disabled selected>Loading collections...</option>
-    </select>
+    <!-- Alert container -->
+    <div id="alertContainer"></div>
 
-    <label for="modeName">New Mode Name</label>
-    <input type="text" id="modeName" placeholder="e.g., Dark Mode V2, Brand 2025">
+    <!-- Collection selector -->
+    <div class="form-group">
+        <label class="label" for="collectionSelect">Collection</label>
+        <select id="collectionSelect" class="select">
+            <option value="" disabled selected>Loading collections...</option>
+        </select>
+    </div>
 
-    <label for="jsonData">Variable Data (JSON)</label>
-    <textarea id="jsonData" placeholder='{"primary/main": "#FF0000", "spacing/small": 8}'></textarea>
-    <div class="hint">Format: {"Variable Name": "Value"}</div>
+    <!-- Mode name input -->
+    <div class="form-group">
+        <label class="label" for="modeName">Mode Name</label>
+        <input type="text" id="modeName" class="input" placeholder="e.g., Dark Mode V2">
+    </div>
 
-    <button id="runBtn">Create Mode & Update Values</button>
+    <!-- Drop zone -->
+    <div id="dropZone" class="drop-zone">
+        <div class="drop-zone-icon">📁</div>
+        <div class="drop-zone-title">Drop your tokens.json here</div>
+        <div class="drop-zone-hint">or click to browse</div>
+        <input type="file" id="fileInput" accept=".json" class="hidden">
+    </div>
+
+    <!-- File indicator (shown after upload) -->
+    <div id="fileBadge" class="hidden"></div>
+
+    <!-- Mode selector (shown if multiple modes detected) -->
+    <div id="modeSelector" class="form-group hidden">
+        <label class="label" for="modeSelect">Select Mode</label>
+        <select id="modeSelect" class="select"></select>
+    </div>
+
+    <!-- Preview card -->
+    <div id="previewCard" class="preview-card hidden">
+        <div class="preview-title">Preview</div>
+        <div id="previewContent"></div>
+    </div>
+
+    <!-- Separator -->
+    <div class="separator">
+        <span class="separator-text">or paste json</span>
+    </div>
+
+    <!-- Manual JSON input -->
+    <div class="form-group">
+        <label class="label" for="jsonData">Manual JSON Input</label>
+        <textarea id="jsonData" class="textarea" placeholder='{"color/primary": "#000", "spacing/base": 8}'></textarea>
+    </div>
+
+    <!-- Create button -->
+    <button id="createBtn" class="btn btn-primary" disabled>
+        <span id="btnText">Create Mode</span>
+    </button>
 
     <script>
-        // Listen for messages from the plugin code
+        // ===== STATE MANAGEMENT =====
+        let state = {
+            rawData: null,
+            detectedModes: [],
+            selectedMode: null,
+            flatData: null,
+            fileName: null
+        };
+
+        // ===== TOKEN CONVERTER CLASS =====
+        class TokenConverter {
+            detectFormat(json) {
+                // 1. Already flat?
+                if (this.isFlat(json)) {
+                    return { type: 'FLAT', data: json, modes: [] };
+                }
+
+                // 2. Tokens Studio (has "modes" key)
+                const modesObj = this.findKeyRecursively(json, 'modes');
+                if (modesObj) {
+                    return { type: 'TOKENS_STUDIO', modes: Object.keys(modesObj), data: modesObj };
+                }
+
+                // 3. Root-level modes
+                if (this.looksLikeRootModes(json)) {
+                    return { type: 'ROOT_MODES', modes: Object.keys(json), data: json };
+                }
+
+                // 4. Single nested structure
+                return { type: 'NESTED', modes: [], data: json };
+            }
+
+            isFlat(obj) {
+                return Object.values(obj).every(v => typeof v !== 'object' || v === null);
+            }
+
+            looksLikeRootModes(obj) {
+                const values = Object.values(obj);
+                return values.length > 1 && values.every(v => typeof v === 'object' && v !== null);
+            }
+
+            findKeyRecursively(obj, targetKey) {
+                if (Array.isArray(obj)) {
+                    for (let item of obj) {
+                        const result = this.findKeyRecursively(item, targetKey);
+                        if (result) return result;
+                    }
+                } else if (typeof obj === 'object' && obj !== null) {
+                    if (obj.hasOwnProperty(targetKey)) return obj[targetKey];
+                    for (let key in obj) {
+                        const result = this.findKeyRecursively(obj[key], targetKey);
+                        if (result) return result;
+                    }
+                }
+                return null;
+            }
+
+            flatten(obj, prefix = '', depth = 0) {
+                if (depth > 50) throw new Error('JSON too deeply nested (max 50 levels)');
+
+                const result = {};
+
+                for (const [key, value] of Object.entries(obj)) {
+                    // Found leaf value
+                    if (key === '$value' || key === 'value') {
+                        const varName = prefix.slice(0, -1);
+                        result[varName] = value;
+                        continue;
+                    }
+
+                    // Skip metadata
+                    if (key.startsWith('$') || key === 'type' || key === 'description') {
+                        continue;
+                    }
+
+                    // Recurse into objects
+                    if (typeof value === 'object' && value !== null) {
+                        Object.assign(result, this.flatten(value, prefix + key + '/', depth + 1));
+                    } else {
+                        // Direct primitive
+                        result[prefix + key] = value;
+                    }
+                }
+
+                return result;
+            }
+
+            convert(json, selectedMode = null) {
+                const format = this.detectFormat(json);
+
+                switch (format.type) {
+                    case 'FLAT':
+                        return { flat: json, modes: [] };
+
+                    case 'TOKENS_STUDIO':
+                    case 'ROOT_MODES':
+                        if (!selectedMode && format.modes.length === 1) {
+                            selectedMode = format.modes[0];
+                        }
+                        if (!selectedMode) {
+                            return { flat: null, modes: format.modes };
+                        }
+                        return { flat: this.flatten(format.data[selectedMode]), modes: format.modes };
+
+                    case 'NESTED':
+                        return { flat: this.flatten(json), modes: [] };
+                }
+            }
+        }
+
+        const converter = new TokenConverter();
+
+        // ===== DOM ELEMENTS =====
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileBadge = document.getElementById('fileBadge');
+        const modeSelector = document.getElementById('modeSelector');
+        const modeSelect = document.getElementById('modeSelect');
+        const previewCard = document.getElementById('previewCard');
+        const previewContent = document.getElementById('previewContent');
+        const jsonData = document.getElementById('jsonData');
+        const createBtn = document.getElementById('createBtn');
+        const btnText = document.getElementById('btnText');
+        const modeName = document.getElementById('modeName');
+        const collectionSelect = document.getElementById('collectionSelect');
+        const alertContainer = document.getElementById('alertContainer');
+
+        // ===== DROP ZONE HANDLERS =====
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragging');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragging');
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragging');
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            if (!file.name.endsWith('.json')) {
+                showAlert('Please drop a JSON file', 'error');
+                return;
+            }
+            await processFile(file);
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files[0]) {
+                await processFile(e.target.files[0]);
+            }
+        });
+
+        // ===== FILE PROCESSING =====
+        async function processFile(file) {
+            try {
+                showLoading(true);
+                const text = await file.text();
+
+                // Check file size (5MB limit)
+                if (text.length > 5 * 1024 * 1024) {
+                    showAlert('File too large (max 5MB)', 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                const json = JSON.parse(text);
+                state.fileName = file.name;
+
+                const result = converter.convert(json);
+
+                if (result.modes.length > 1) {
+                    // Multiple modes - show selector
+                    showModeSelector(result.modes);
+                    state.rawData = json;
+                    state.detectedModes = result.modes;
+                    showFileBadge(file.name);
+                } else if (result.modes.length === 1) {
+                    // Single mode - auto-select
+                    state.flatData = result.flat;
+                    modeName.value = result.modes[0];
+                    showPreview(result.flat);
+                    showFileBadge(file.name);
+                    createBtn.disabled = false;
+                } else {
+                    // No modes, already flat
+                    state.flatData = result.flat;
+                    showPreview(result.flat);
+                    showFileBadge(file.name);
+                    createBtn.disabled = false;
+                }
+
+                // Clear manual input
+                jsonData.value = '';
+                showLoading(false);
+
+            } catch (e) {
+                showAlert(`Error: ${e.message}`, 'error');
+                showLoading(false);
+            }
+        }
+
+        function showModeSelector(modes) {
+            modeSelect.innerHTML = '';
+            modes.forEach(mode => {
+                const option = document.createElement('option');
+                option.value = mode;
+                option.text = mode;
+                modeSelect.appendChild(option);
+            });
+            modeSelector.classList.remove('hidden');
+
+            modeSelect.onchange = () => {
+                const result = converter.convert(state.rawData, modeSelect.value);
+                state.flatData = result.flat;
+                state.selectedMode = modeSelect.value;
+                modeName.value = modeSelect.value;
+                showPreview(result.flat);
+                createBtn.disabled = false;
+            };
+        }
+
+        function showPreview(flatData) {
+            const count = Object.keys(flatData).length;
+            const sample = Object.entries(flatData).slice(0, 8);
+
+            let html = `<div class="preview-count">${count} variables detected</div>`;
+            sample.forEach(([k, v]) => {
+                const formattedValue = typeof v === 'string' && v.startsWith('{')
+                    ? `<code>${v}</code>`
+                    : String(v);
+                html += `<div class="preview-item">• ${k} → ${formattedValue}</div>`;
+            });
+            if (count > 8) {
+                html += `<div class="preview-item" style="color: hsl(var(--muted-foreground))">...and ${count - 8} more</div>`;
+            }
+
+            previewContent.innerHTML = html;
+            previewCard.classList.remove('hidden');
+        }
+
+        function showFileBadge(fileName) {
+            fileBadge.innerHTML = `
+                <span>📄 ${fileName}</span>
+                <button class="file-badge-remove" onclick="clearFile()">×</button>
+            `;
+            fileBadge.className = 'file-badge';
+        }
+
+        function clearFile() {
+            state = { rawData: null, detectedModes: [], selectedMode: null, flatData: null, fileName: null };
+            fileBadge.classList.add('hidden');
+            modeSelector.classList.add('hidden');
+            previewCard.classList.add('hidden');
+            fileInput.value = '';
+            createBtn.disabled = !jsonData.value.trim();
+        }
+
+        function showAlert(message, type) {
+            alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        function showLoading(loading) {
+            if (loading) {
+                btnText.innerHTML = '<span class="spinner"></span> Processing...';
+                createBtn.disabled = true;
+            } else {
+                btnText.textContent = 'Create Mode';
+            }
+        }
+
+        // ===== MANUAL JSON INPUT =====
+        jsonData.addEventListener('input', () => {
+            if (jsonData.value.trim() && !state.flatData) {
+                createBtn.disabled = false;
+            } else if (!jsonData.value.trim() && !state.flatData) {
+                createBtn.disabled = true;
+            }
+        });
+
+        // ===== CREATE MODE BUTTON =====
+        createBtn.addEventListener('click', () => {
+            const collectionId = collectionSelect.value;
+            const modeNameValue = modeName.value.trim();
+
+            // Use flatData from file or parse manual input
+            let dataToSend = state.flatData;
+
+            if (!dataToSend) {
+                const jsonRaw = jsonData.value.trim();
+                if (!jsonRaw) {
+                    showAlert('Please provide token data', 'error');
+                    return;
+                }
+                try {
+                    dataToSend = JSON.parse(jsonRaw);
+                } catch (e) {
+                    showAlert('Invalid JSON syntax', 'error');
+                    return;
+                }
+            }
+
+            if (!modeNameValue) {
+                showAlert('Please enter a mode name', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'create-mode',
+                    collectionId,
+                    modeName: modeNameValue,
+                    data: dataToSend
+                }
+            }, '*');
+        });
+
+        // ===== MESSAGE HANDLER =====
         window.onmessage = (event) => {
             const msg = event.data.pluginMessage;
+
             if (msg.type === 'load-collections') {
-                const select = document.getElementById('collectionSelect');
-                select.innerHTML = '';
+                collectionSelect.innerHTML = '';
                 msg.data.forEach(col => {
                     const option = document.createElement('option');
                     option.value = col.id;
                     option.text = `${col.name} (${col.modes.length} modes)`;
-                    select.appendChild(option);
+                    collectionSelect.appendChild(option);
                 });
             } else if (msg.type === 'success') {
-                alert(msg.message);
+                showLoading(false);
+                showAlert(msg.message, 'success');
+                // Reset state
+                clearFile();
+                jsonData.value = '';
+                modeName.value = '';
             } else if (msg.type === 'error') {
-                alert('Error: ' + msg.message);
+                showLoading(false);
+                showAlert(msg.message, 'error');
             }
         };
-
-        document.getElementById('runBtn').onclick = () => {
-            const collectionId = document.getElementById('collectionSelect').value;
-            const modeName = document.getElementById('modeName').value;
-            const jsonRaw = document.getElementById('jsonData').value;
-
-            if (!modeName || !jsonRaw) {
-                alert("Please fill in all fields.");
-                return;
-            }
-
-            try {
-                const parsedData = JSON.parse(jsonRaw);
-                parent.postMessage({ pluginMessage: { 
-                    type: 'create-mode', 
-                    collectionId, 
-                    modeName, 
-                    data: parsedData 
-                } }, '*');
-            } catch (e) {
-                alert("Invalid JSON format.");
-            }
-        }
     </script>
 </body>
 </html>

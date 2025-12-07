@@ -1,0 +1,13 @@
+{
+  "name": "variable-mode-injector",
+  "version": "1.0.0",
+  "description": "Injects a new mode and updates variable values via JSON",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.121.0",
+    "typescript": "^5.3.3"
+  }
+}

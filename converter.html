@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Token Converter</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; color: #333; }
+        h2 { font-size: 16px; margin-bottom: 8px; }
+        textarea { width: 100%; height: 200px; margin-bottom: 20px; font-family: monospace; border: 1px solid #ccc; border-radius: 4px; padding: 8px; }
+        button { padding: 10px 20px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #333; }
+        select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-right: 10px; font-size: 14px; min-width: 200px; }
+        .step { margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+        .hidden { display: none; }
+        #mode-container { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>Token JSON Converter 2.0</h1>
+    <p>Handles nested structures and multi-mode files.</p>
+
+    <div class="step">
+        <h2>1. Paste Complex JSON</h2>
+        <textarea id="input" placeholder='Paste full content of base-2-variables.json or semantic-2-variables.json here...'></textarea>
+        <button onclick="analyzeJSON()">Step 1: Analyze Structure</button>
+    </div>
+
+    <div id="step-2" class="step hidden">
+        <h2>2. Select Mode to Extract</h2>
+        <div id="mode-container">
+            <select id="modeSelect"></select>
+            <button onclick="convert()">Step 2: Convert to Flat JSON</button>
+        </div>
+    </div>
+
+    <div class="step">
+        <h2>3. Result (Copy to Figma Plugin)</h2>
+        <textarea id="output" readonly placeholder="Result will appear here..."></textarea>
+    </div>
+
+    <script>
+        let parsedData = null;
+        let modesObject = null;
+
+        function analyzeJSON() {
+            try {
+                const raw = document.getElementById('input').value;
+                if (!raw.trim()) return alert("Please paste JSON first.");
+                
+                parsedData = JSON.parse(raw);
+                modesObject = findKeyRecursively(parsedData, 'modes');
+
+                if (!modesObject) {
+                    alert("Could not find a 'modes' object in this JSON.");
+                    return;
+                }
+
+                // Populate Dropdown
+                const select = document.getElementById('modeSelect');
+                select.innerHTML = '';
+                Object.keys(modesObject).forEach(modeName => {
+                    const option = document.createElement('option');
+                    option.value = modeName;
+                    option.text = modeName;
+                    select.appendChild(option);
+                });
+
+                // Show Step 2
+                document.getElementById('step-2').classList.remove('hidden');
+
+            } catch (e) {
+                alert("Invalid JSON syntax: " + e.message);
+            }
+        }
+
+        function convert() {
+            if (!modesObject) return;
+
+            const selectedMode = document.getElementById('modeSelect').value;
+            const targetData = modesObject[selectedMode];
+            const flat = {};
+
+            // Recursive function to flatten the selected mode
+            function traverse(obj, prefix = '') {
+                for (const [key, value] of Object.entries(obj)) {
+                    
+                    // Case 1: We found a value (Leaf Node)
+                    if (key === '$value' || key === 'value') {
+                        // Clean up the name (remove trailing slash)
+                        const finalName = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix;
+                        flat[finalName] = value;
+                        return;
+                    }
+
+                    // Case 2: Skip Metadata
+                    if (key.startsWith('$') || key === 'type') continue;
+
+                    // Case 3: Dig Deeper
+                    if (typeof value === 'object' && value !== null) {
+                        traverse(value, prefix + key + '/');
+                    }
+                }
+            }
+
+            traverse(targetData);
+            document.getElementById('output').value = JSON.stringify(flat, null, 2);
+        }
+
+        // Helper to find "modes" key anywhere in the nested structure
+        function findKeyRecursively(obj, targetKey) {
+            if (Array.isArray(obj)) {
+                for (let item of obj) {
+                    const result = findKeyRecursively(item, targetKey);
+                    if (result) return result;
+                }
+            } else if (typeof obj === 'object' && obj !== null) {
+                if (obj.hasOwnProperty(targetKey)) return obj[targetKey];
+                
+                for (let key in obj) {
+                    const result = findKeyRecursively(obj[key], targetKey);
+                    if (result) return result;
+                }
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>

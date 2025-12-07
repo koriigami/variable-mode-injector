@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Variable Mode Injector</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 16px;
+            margin: 0;
+            color: #333;
+            background-color: #fff;
+        }
+        h2 { font-size: 14px; margin-bottom: 12px; }
+        label { display: block; font-size: 11px; font-weight: 600; margin-bottom: 4px; color: #555; }
+        select, input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #e1e1e1;
+            border-radius: 4px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        textarea { height: 120px; font-family: monospace; }
+        button {
+            width: 100%;
+            background-color: #18A0FB;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0d8ce6; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .hint { font-size: 10px; color: #888; margin-top: -12px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+    <label for="collectionSelect">Select Collection</label>
+    <select id="collectionSelect">
+        <option value="" disabled selected>Loading collections...</option>
+    </select>
+
+    <label for="modeName">New Mode Name</label>
+    <input type="text" id="modeName" placeholder="e.g., Dark Mode V2, Brand 2025">
+
+    <label for="jsonData">Variable Data (JSON)</label>
+    <textarea id="jsonData" placeholder='{"primary/main": "#FF0000", "spacing/small": 8}'></textarea>
+    <div class="hint">Format: {"Variable Name": "Value"}</div>
+
+    <button id="runBtn">Create Mode & Update Values</button>
+
+    <script>
+        // Listen for messages from the plugin code
+        window.onmessage = (event) => {
+            const msg = event.data.pluginMessage;
+            if (msg.type === 'load-collections') {
+                const select = document.getElementById('collectionSelect');
+                select.innerHTML = '';
+                msg.data.forEach(col => {
+                    const option = document.createElement('option');
+                    option.value = col.id;
+                    option.text = `${col.name} (${col.modes.length} modes)`;
+                    select.appendChild(option);
+                });
+            } else if (msg.type === 'success') {
+                alert(msg.message);
+            } else if (msg.type === 'error') {
+                alert('Error: ' + msg.message);
+            }
+        };
+
+        document.getElementById('runBtn').onclick = () => {
+            const collectionId = document.getElementById('collectionSelect').value;
+            const modeName = document.getElementById('modeName').value;
+            const jsonRaw = document.getElementById('jsonData').value;
+
+            if (!modeName || !jsonRaw) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                const parsedData = JSON.parse(jsonRaw);
+                parent.postMessage({ pluginMessage: { 
+                    type: 'create-mode', 
+                    collectionId, 
+                    modeName, 
+                    data: parsedData 
+                } }, '*');
+            } catch (e) {
+                alert("Invalid JSON format.");
+            }
+        }
+    </script>
+</body>
+</html>

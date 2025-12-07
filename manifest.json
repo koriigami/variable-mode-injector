@@ -1,0 +1,12 @@
+{
+  "name": "Variable Mode Injector",
+  "id": "variable-mode-injector",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "src/ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "editorType": [
+    "figma"
+  ]
+}

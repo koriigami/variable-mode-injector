@@ -110,6 +110,53 @@ The fastest way to inject tokens - no manual conversion needed!
 - Style Dictionary output (with `value` keys)
 - Already-flat JSON (simple key-value pairs)
 - Nested token structures (auto-flattened)
+- **Collections array format (NEW!)** - Batch import multiple collections
+
+### Collections Array Format (New!)
+
+Got an entire design system to import? Use the collections format to batch-create everything at once:
+
+```json
+{
+  "collections": [
+    {
+      "name": "Primitives - Colors",
+      "description": "Base color values",
+      "modes": ["Light", "Dark"],
+      "variables": {
+        "neutral-50": {
+          "type": "color",
+          "Light": "oklch(0.985 0 0)",
+          "Dark": "oklch(0.21 0.006 285.885)",
+          "description": "Lightest neutral"
+        }
+      }
+    },
+    {
+      "name": "Semantic - Layout",
+      "modes": ["Light", "Dark"],
+      "variables": {
+        "background": {
+          "type": "color",
+          "Light": "{Primitives - Colors.white}",
+          "Dark": "{Primitives - Colors.black}"
+        }
+      }
+    }
+  ]
+}
+```
+
+**How it works:**
+
+The plugin sorts collections by dependency (primitives first, then semantics, then components) so cross-collection aliases like `{Primitives - Colors.white}` work correctly. Each variable needs a `type` field (`color`, `number`, `string`, or `boolean`), and you define values for each mode as properties.
+
+Works great for empty Figma files where you're starting fresh. Just drop the file and watch it create everything.
+
+**Color format support:**
+- Hex: `#FF0000` or `#FF0000FF`
+- RGBA: `rgba(255, 0, 0, 1)`
+- OKLCH: `oklch(0.5 0.1 180)` (perceptually uniform - those weird decimals actually mean something!)
 
 ### Alternative: Manual Paste
 
@@ -152,6 +199,10 @@ The plugin intelligently detects and processes different value types:
 | `"text"` | String | Sets string value |
 
 **Variable Linking**: When you use an alias like `{Gray.90}`, the plugin searches your file for a variable named "Gray/90" or "Gray.90" and creates a proper Figma variable link. This enables true semantic token relationships.
+
+**Cross-Collection Aliases**: The collections format lets you reference variables from other collections using `{CollectionName.variableName}` syntax. The plugin figures out the dependency order so everything links up correctly.
+
+For example, `{Primitives - Colors.white}` creates a link to the "white" variable in your "Primitives - Colors" collection. Semantic tokens can reference primitives, component tokens can reference both - the plugin sorts it all out.
 
 ## Development
 
@@ -206,6 +257,18 @@ variable-mode-injector/
 ### Manifest error about "containsWidget"
 **Problem**: Manifest configuration issue.
 **Solution**: Ensure `manifest.json` has `"editorType": ["figma"]`.
+
+### Error: "Circular dependency detected"
+**What's happening:** Two collections reference each other (Collection A uses variables from B, B uses variables from A).
+**Fix:** Rethink your token hierarchy. It should flow one way: Primitives → Semantic → Components. No loops allowed.
+
+### Aliases showing as text instead of links
+**What's happening:** You see `{Collection.variable}` as a string value instead of a proper link.
+**Fix:** Make sure the collection you're referencing is in the same import file. Also double-check the spelling - it's case-sensitive.
+
+### OKLCH colors look slightly off
+**What's happening:** OKLCH conversion uses a simplified algorithm that can be 1-2% off from the spec.
+**Fix:** For color-critical work, stick with hex or RGBA. For most UI work, the difference is imperceptible. You can always tweak after import if something looks weird.
 
 ## Use Cases
 

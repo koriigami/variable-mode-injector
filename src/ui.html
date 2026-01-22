@@ -344,12 +344,22 @@
             detectedModes: [],
             selectedMode: null,
             flatData: null,
-            fileName: null
+            fileName: null,
+            collectionsData: null
         };
 
         // ===== TOKEN CONVERTER CLASS =====
         class TokenConverter {
             detectFormat(json) {
+                // NEW: Check for collections array format
+                if (json.collections && Array.isArray(json.collections)) {
+                    return {
+                        type: 'COLLECTIONS_ARRAY',
+                        data: json,
+                        collectionsCount: json.collections.length
+                    };
+                }
+
                 // 1. Already flat?
                 if (this.isFlat(json)) {
                     return { type: 'FLAT', data: json, modes: [] };
@@ -513,6 +523,20 @@
                 const json = JSON.parse(text);
                 state.fileName = file.name;
 
+                // NEW: Check for collections array format
+                const format = converter.detectFormat(json);
+
+                if (format.type === 'COLLECTIONS_ARRAY') {
+                    showCollectionsPreview(json.collections);
+                    state.collectionsData = json.collections;
+                    createBtn.textContent = 'Import All Collections';
+                    createBtn.disabled = false;
+                    jsonData.value = '';
+                    showLoading(false);
+                    return;
+                }
+
+                // Existing format handling
                 const result = converter.convert(json);
 
                 if (result.modes.length > 1) {
@@ -585,6 +609,38 @@
             previewCard.classList.remove('hidden');
         }
 
+        function showCollectionsPreview(collections) {
+            const totalVars = collections.reduce((sum, col) =>
+                sum + Object.keys(col.variables).length, 0
+            );
+
+            let html = `<div class="preview-count">${collections.length} collections, ${totalVars} total variables</div>`;
+
+            collections.forEach((col, idx) => {
+                if (idx >= 5) return;
+                const varCount = Object.keys(col.variables).length;
+                const modesText = col.modes.join(', ');
+                html += `<div class="preview-item">
+      <strong>${idx + 1}. ${col.name}</strong><br>
+      &nbsp;&nbsp;• ${varCount} variables<br>
+      &nbsp;&nbsp;• Modes: ${modesText}
+    </div>`;
+            });
+
+            if (collections.length > 5) {
+                html += `<div class="preview-item" style="color: hsl(var(--muted-foreground))">
+      ...and ${collections.length - 5} more collections
+    </div>`;
+            }
+
+            previewContent.innerHTML = html;
+            previewCard.classList.remove('hidden');
+
+            // Hide mode selector and collection selector for batch import
+            modeSelector.classList.add('hidden');
+            collectionSelect.parentElement.classList.add('hidden');
+        }
+
         function showFileBadge(fileName) {
             fileBadge.innerHTML = `
                 <span>📄 ${fileName}</span>
@@ -594,12 +650,14 @@
         }
 
         function clearFile() {
-            state = { rawData: null, detectedModes: [], selectedMode: null, flatData: null, fileName: null };
+            state = { rawData: null, detectedModes: [], selectedMode: null, flatData: null, fileName: null, collectionsData: null };
             fileBadge.classList.add('hidden');
             modeSelector.classList.add('hidden');
             previewCard.classList.add('hidden');
             fileInput.value = '';
+            createBtn.textContent = 'Create Mode';
             createBtn.disabled = !jsonData.value.trim();
+            collectionSelect.parentElement.classList.remove('hidden');
         }
 
         function showAlert(message, type) {
@@ -629,6 +687,19 @@
 
         // ===== CREATE MODE BUTTON =====
         createBtn.addEventListener('click', () => {
+            // NEW: Handle collections format
+            if (state.collectionsData) {
+                showLoading(true);
+                parent.postMessage({
+                    pluginMessage: {
+                        type: 'create-collections',
+                        collections: state.collectionsData
+                    }
+                }, '*');
+                return;
+            }
+
+            // EXISTING: Single-mode logic
             const collectionId = collectionSelect.value;
             const modeNameValue = modeName.value.trim();
 

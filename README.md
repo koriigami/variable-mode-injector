@@ -2,6 +2,8 @@
 
 > A Figma plugin that lets you test and migrate design tokens without breaking a single link.
 
+**[Install from Figma Community →](https://www.figma.com/community/plugin/1581328658919282285)** | [GitHub](https://github.com/koriigami/variable-mode-injector)
+
 ## The Problem
 
 You've updated your design system's tokens. New colors, refined spacing, better semantics. They're perfect.
@@ -35,28 +37,45 @@ Traditional approach: Export → Open browser → Paste → Select mode → Conv
 ## Features
 
 - **Drag-and-Drop Interface**: Drop your tokens.json file directly onto the plugin (or click to browse)
-- **Smart Format Detection**: Auto-detects Tokens Studio, Style Dictionary, flat JSON, and nested formats
+- **Format Detection**: Recognizes Tokens Studio, Style Dictionary, flat JSON, nested formats, and collections array
+- **Batch Import Collections (NEW!)**: Import entire design systems with 15+ collections in one click
+- **OKLCH & RGBA Support (NEW!)**: Perceptually uniform colors and transparency values
+- **Cross-Collection Aliases (NEW!)**: Semantic tokens that reference primitives work automatically
 - **One-Motion Workflow**: No external tools needed - conversion happens in real-time
-- **Live Preview**: See exactly what will be created before injecting
-- **Auto-Mode Selection**: Automatically selects single modes, shows dropdown for multiple
-- **Smart Value Detection**: Automatically handles hex codes, numbers, booleans, strings, and variable aliases
+- **Live Preview**: See what will be created before you commit
+- **Auto-Mode Selection**: Single mode? Fills in automatically. Multiple? Pick from dropdown
+- **Value Detection**: Handles hex codes, numbers, booleans, strings, box shadows, and variable aliases
 - **Semantic Token Linking**: Converts references like `{Gray.90}` into proper Figma variable links
-- **Pro Plan Optimized**: Respects Figma's 4-mode limit with helpful error messages
-- **Beautiful UI**: Built with shadcn-inspired design system for a polished experience
-- **Type-Safe**: Built with TypeScript for reliability
+- **Sticky CTA Button (NEW!)**: Action button stays at the bottom while you scroll
+- **Pro Plan Optimized**: Respects Figma's 4-mode limit with clear error messages
+- **Clean UI**: Uses shadcn design patterns
+- **TypeScript**: Type checking catches bugs before they ship
 
 ## Installation
 
-### Prerequisites
+### Option 1: Install from Figma Community (Recommended)
 
+If you just want to use it:
+
+1. Visit the [Figma Community page](https://www.figma.com/community/plugin/1581328658919282285)
+2. Click **"Try it out"** or **"Install"**
+3. Open any Figma file → Right-click → **Plugins** → **Variable Mode Injector**
+
+No build steps required.
+
+### Option 2: Build from Source (For Developers)
+
+Want to contribute or customize? Build it yourself:
+
+**Prerequisites:**
 - Node.js installed
 - Figma desktop app
 
-### Setup
+**Steps:**
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/variable-mode-injector.git
+   git clone https://github.com/koriigami/variable-mode-injector.git
    cd variable-mode-injector
    ```
 
@@ -77,6 +96,20 @@ Traditional approach: Export → Open browser → Paste → Select mode → Conv
    - Right-click canvas → **Plugins** → **Development** → **Import plugin from manifest...**
    - Select the `manifest.json` file from your project folder
 
+## What's New in v2.0
+
+**Collections Format**
+Drop a single JSON file with 15+ collections and they all get created at once. No more one-at-a-time imports.
+
+**OKLCH Colors**
+Those weird `oklch(0.985 0 0)` values from modern color pickers? The plugin now handles them.
+
+**Cross-Collection Aliases**
+Semantic tokens that reference `{Primitives - Colors.white}` resolve automatically. The plugin sorts out the dependency order.
+
+**UX Tweaks**
+The Create/Import button sticks to the bottom now. Less scrolling.
+
 ## Usage
 
 ### Quick Start (Drag-and-Drop)
@@ -93,12 +126,12 @@ The fastest way to inject tokens - no manual conversion needed!
    - Drag your `tokens.json` file onto the drop zone
    - Or click the drop zone to browse for a file
 
-4. **Auto-magic happens**
-   - Plugin detects the format (Tokens Studio, Style Dictionary, etc.)
-   - Flattens nested structures automatically
-   - Shows a live preview of detected variables
-   - Auto-fills the mode name if single mode is found
-   - If multiple modes exist, select one from the dropdown
+4. **Plugin processes the file**
+   - Detects the format (Tokens Studio, Style Dictionary, etc.)
+   - Flattens nested structures if needed
+   - Shows a preview of what will be created
+   - If there's only one mode, fills in the name for you
+   - Multiple modes? Pick one from the dropdown
 
 5. **Create the mode**
    - Review the preview
@@ -188,7 +221,7 @@ Prefer keyboard-only workflow? You can still paste JSON manually:
 
 ## How the Plugin Handles Values
 
-The plugin intelligently detects and processes different value types:
+The plugin detects value types and handles them accordingly:
 
 | Input Example | Type | Action |
 |---------------|------|--------|
@@ -198,7 +231,7 @@ The plugin intelligently detects and processes different value types:
 | `"{Gray.90}"` | Alias | Links to variable "Gray/90" or "Gray.90" |
 | `"text"` | String | Sets string value |
 
-**Variable Linking**: When you use an alias like `{Gray.90}`, the plugin searches your file for a variable named "Gray/90" or "Gray.90" and creates a proper Figma variable link. This enables true semantic token relationships.
+**Variable Linking**: When you use an alias like `{Gray.90}`, the plugin searches your file for a variable named "Gray/90" or "Gray.90" and creates a proper Figma variable link. Your semantic tokens link to primitives instead of copying values.
 
 **Cross-Collection Aliases**: The collections format lets you reference variables from other collections using `{CollectionName.variableName}` syntax. The plugin figures out the dependency order so everything links up correctly.
 
@@ -272,11 +305,11 @@ variable-mode-injector/
 
 ## Use Cases
 
-- **Testing new color palettes** before committing to changes
-- **Migrating design tokens** from tools like Tokens Studio, Style Dictionary, or Supernova
-- **A/B testing** different design directions with clients
-- **Seasonal themes** that need quick toggling (light/dark, brand variations)
-- **Updating semantic tokens** without breaking existing designs
+- Testing new color palettes before committing
+- Migrating from Tokens Studio, Style Dictionary, or Supernova
+- A/B testing design directions with clients
+- Quick theme toggling (light/dark, brand variations)
+- Updating semantic tokens without breaking links
 
 ## Technical Details
 
@@ -287,7 +320,7 @@ variable-mode-injector/
 
 ## Contributing
 
-Contributions are welcome! This is an open-source project built to solve a real problem in design systems workflows.
+Pull requests are welcome. This plugin started as a solution to a real migration problem and keeps getting better with community input.
 
 ### How to Contribute
 

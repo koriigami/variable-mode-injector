@@ -384,18 +384,20 @@ async function processCollection(
 
   // Create modes
   const existingModeNames = collection.modes.map(m => m.name);
-  const modesToCreate = collectionDef.modes.filter(m => !existingModeNames.includes(m));
+
+  // Rename default mode first to avoid conflicts
+  if (collection.modes[0].name !== collectionDef.modes[0]) {
+    collection.renameMode(collection.modes[0].modeId, collectionDef.modes[0]);
+  }
+
+  // Add remaining modes (skip the first one since we already renamed it)
+  const modesToCreate = collectionDef.modes.slice(1).filter(m => !existingModeNames.includes(m));
 
   for (const modeName of modesToCreate) {
     if (collection.modes.length >= 4) {
       throw new Error(`Cannot add mode "${modeName}": Max 4 modes (Figma Pro limit)`);
     }
     collection.addMode(modeName);
-  }
-
-  // Rename default mode if needed
-  if (collection.modes[0].name !== collectionDef.modes[0]) {
-    collection.renameMode(collection.modes[0].modeId, collectionDef.modes[0]);
   }
 
   // Create/update variables

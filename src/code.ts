@@ -71,10 +71,14 @@ figma.ui.onmessage = async (msg) => {
       };
 
       // First pass: create collections and variables
+      console.log(`Processing ${sortedCollections.length} collections...`);
       for (const collectionDef of sortedCollections) {
+        console.log(`Processing collection: ${collectionDef.name}`);
         try {
           await processCollection(collectionDef, result);
+          console.log(`✓ Completed: ${collectionDef.name}`);
         } catch (error: any) {
+          console.error(`✗ Failed: ${collectionDef.name}`, error);
           result.errors.push(`${collectionDef.name}: ${error.message}`);
         }
       }
@@ -426,7 +430,8 @@ async function processVariable(
     'color': 'COLOR',
     'number': 'FLOAT',
     'string': 'STRING',
-    'boolean': 'BOOLEAN'
+    'boolean': 'BOOLEAN',
+    'boxShadow': 'STRING' // Figma doesn't have native boxShadow type, store as string
   };
 
   if (variable) {
@@ -435,6 +440,7 @@ async function processVariable(
     const figmaType = typeMap[varDef.type] || 'STRING';
     variable = figma.variables.createVariable(varName, collection.id, figmaType);
     result.variablesCreated++;
+    console.log(`  Created variable: ${varName} (${figmaType})`);
   }
 
   // Set values for each mode (skip metadata fields)
@@ -483,6 +489,11 @@ function resolveValueFirstPass(rawValue: any, varType: string): ResolvedValue | 
   // Handle boolean
   if (typeof rawValue === 'boolean') {
     return { type: 'RAW', value: rawValue, dataType: 'BOOLEAN' };
+  }
+
+  // Handle boxShadow and other string types
+  if (varType === 'boxShadow' || typeof rawValue === 'string') {
+    return { type: 'RAW', value: String(rawValue), dataType: 'STRING' };
   }
 
   return { type: 'RAW', value: String(rawValue), dataType: 'STRING' };

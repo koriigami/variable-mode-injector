@@ -35,12 +35,34 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            padding: 20px;
+            padding: 0;
             margin: 0;
             background-color: hsl(var(--background));
             color: hsl(var(--foreground));
             font-size: 14px;
             line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Scrollable content area */
+        .content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            padding-bottom: 10px;
+        }
+
+        /* Sticky button container */
+        .sticky-footer {
+            position: sticky;
+            bottom: 0;
+            padding: 12px 20px;
+            background: linear-gradient(to top, hsl(var(--background)) 80%, transparent);
+            border-top: 1px solid hsl(var(--border));
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
         }
 
         /* Label styling */
@@ -281,61 +303,66 @@
 </head>
 <body>
 
-    <!-- Alert container -->
-    <div id="alertContainer"></div>
+    <!-- Scrollable content -->
+    <div class="content-wrapper">
+        <!-- Alert container -->
+        <div id="alertContainer"></div>
 
-    <!-- Collection selector -->
-    <div class="form-group">
-        <label class="label" for="collectionSelect">Collection</label>
-        <select id="collectionSelect" class="select">
-            <option value="" disabled selected>Loading collections...</option>
-        </select>
+        <!-- Collection selector -->
+        <div class="form-group">
+            <label class="label" for="collectionSelect">Collection</label>
+            <select id="collectionSelect" class="select">
+                <option value="" disabled selected>Loading collections...</option>
+            </select>
+        </div>
+
+        <!-- Mode name input -->
+        <div class="form-group">
+            <label class="label" for="modeName">Mode Name</label>
+            <input type="text" id="modeName" class="input" placeholder="e.g., Dark Mode V2">
+        </div>
+
+        <!-- Drop zone -->
+        <div id="dropZone" class="drop-zone">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-title">Drop your tokens.json here</div>
+            <div class="drop-zone-hint">or click to browse</div>
+            <input type="file" id="fileInput" accept=".json" class="hidden">
+        </div>
+
+        <!-- File indicator (shown after upload) -->
+        <div id="fileBadge" class="hidden"></div>
+
+        <!-- Mode selector (shown if multiple modes detected) -->
+        <div id="modeSelector" class="form-group hidden">
+            <label class="label" for="modeSelect">Select Mode</label>
+            <select id="modeSelect" class="select"></select>
+        </div>
+
+        <!-- Preview card -->
+        <div id="previewCard" class="preview-card hidden">
+            <div class="preview-title">Preview</div>
+            <div id="previewContent"></div>
+        </div>
+
+        <!-- Separator -->
+        <div class="separator">
+            <span class="separator-text">or paste json</span>
+        </div>
+
+        <!-- Manual JSON input -->
+        <div class="form-group">
+            <label class="label" for="jsonData">Manual JSON Input</label>
+            <textarea id="jsonData" class="textarea" placeholder='{"color/primary": "#000", "spacing/base": 8}'></textarea>
+        </div>
     </div>
 
-    <!-- Mode name input -->
-    <div class="form-group">
-        <label class="label" for="modeName">Mode Name</label>
-        <input type="text" id="modeName" class="input" placeholder="e.g., Dark Mode V2">
+    <!-- Sticky footer with button -->
+    <div class="sticky-footer">
+        <button id="createBtn" class="btn btn-primary" disabled>
+            <span id="btnText">Create Mode</span>
+        </button>
     </div>
-
-    <!-- Drop zone -->
-    <div id="dropZone" class="drop-zone">
-        <div class="drop-zone-icon">📁</div>
-        <div class="drop-zone-title">Drop your tokens.json here</div>
-        <div class="drop-zone-hint">or click to browse</div>
-        <input type="file" id="fileInput" accept=".json" class="hidden">
-    </div>
-
-    <!-- File indicator (shown after upload) -->
-    <div id="fileBadge" class="hidden"></div>
-
-    <!-- Mode selector (shown if multiple modes detected) -->
-    <div id="modeSelector" class="form-group hidden">
-        <label class="label" for="modeSelect">Select Mode</label>
-        <select id="modeSelect" class="select"></select>
-    </div>
-
-    <!-- Preview card -->
-    <div id="previewCard" class="preview-card hidden">
-        <div class="preview-title">Preview</div>
-        <div id="previewContent"></div>
-    </div>
-
-    <!-- Separator -->
-    <div class="separator">
-        <span class="separator-text">or paste json</span>
-    </div>
-
-    <!-- Manual JSON input -->
-    <div class="form-group">
-        <label class="label" for="jsonData">Manual JSON Input</label>
-        <textarea id="jsonData" class="textarea" placeholder='{"color/primary": "#000", "spacing/base": 8}'></textarea>
-    </div>
-
-    <!-- Create button -->
-    <button id="createBtn" class="btn btn-primary" disabled>
-        <span id="btnText">Create Mode</span>
-    </button>
 
     <script>
         // ===== STATE MANAGEMENT =====

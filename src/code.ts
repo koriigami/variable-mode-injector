@@ -112,7 +112,7 @@ figma.ui.onmessage = async (msg) => {
     const { collectionId, modeName, data } = msg;
 
     try {
-      const collection = figma.variables.getVariableCollectionById(collectionId);
+      const collection = await figma.variables.getVariableCollectionByIdAsync(collectionId);
       if (!collection) throw new Error("Collection not found");
 
       // Check Pro Plan limitation
@@ -129,21 +129,25 @@ figma.ui.onmessage = async (msg) => {
 
       // Loop through provided JSON data
       for (const [varName, varValue] of Object.entries(data)) {
-        
+
         // 1. Resolve Value (Is it a raw value or an alias?)
         const resolvedValue = resolveValue(varValue);
 
         // 2. Find or Create Variable
-        let variableId = collectionVariableIds.find(id => {
-          const v = figma.variables.getVariableById(id);
-          return v && v.name === varName;
-        });
+        let variableId: string | undefined;
+        for (const id of collectionVariableIds) {
+          const v = await figma.variables.getVariableByIdAsync(id);
+          if (v && v.name === varName) {
+            variableId = id;
+            break;
+          }
+        }
 
         let variable: Variable | null = null;
 
         if (variableId) {
           // Existing Variable
-          variable = figma.variables.getVariableById(variableId);
+          variable = await figma.variables.getVariableByIdAsync(variableId);
           if (variable) updateCount++;
         } else {
           // New Variable
@@ -407,9 +411,14 @@ async function processVariable(
   varDef: VariableDefinition,
   result: ProcessingResult
 ): Promise<void> {
-  let variable = collection.variableIds
-    .map(id => figma.variables.getVariableById(id))
-    .find(v => v && v.name === varName);
+  let variable: Variable | null = null;
+  for (const id of collection.variableIds) {
+    const v = await figma.variables.getVariableByIdAsync(id);
+    if (v && v.name === varName) {
+      variable = v;
+      break;
+    }
+  }
 
   const typeMap: Record<string, VariableResolvedDataType> = {
     'color': 'COLOR',
@@ -488,9 +497,14 @@ async function resolveAliases(
   if (!collection) return;
 
   for (const [varName, varDef] of Object.entries(collectionDef.variables)) {
-    const variable = collection.variableIds
-      .map(id => figma.variables.getVariableById(id))
-      .find(v => v && v.name === varName);
+    let variable: Variable | null = null;
+    for (const id of collection.variableIds) {
+      const v = await figma.variables.getVariableByIdAsync(id);
+      if (v && v.name === varName) {
+        variable = v;
+        break;
+      }
+    }
 
     if (!variable) continue;
 
@@ -498,7 +512,7 @@ async function resolveAliases(
       const modeValue = varDef[mode.name];
 
       if (typeof modeValue === 'string' && modeValue.startsWith('{') && modeValue.endsWith('}')) {
-        const aliasTarget = resolveAliasReference(modeValue);
+        const aliasTarget = await resolveAliasReference(modeValue);
 
         if (aliasTarget) {
           try {
@@ -518,7 +532,7 @@ async function resolveAliases(
 }
 
 // Resolve alias reference to variable
-function resolveAliasReference(aliasString: string): Variable | null {
+async function resolveAliasReference(aliasString: string): Promise<Variable | null> {
   const cleanRef = aliasString.slice(1, -1); // Remove braces
   const firstDotIndex = cleanRef.indexOf('.');
   if (firstDotIndex === -1) return null;
@@ -531,7 +545,12 @@ function resolveAliasReference(aliasString: string): Variable | null {
 
   if (!targetCollection) return null;
 
-  return targetCollection.variableIds
-    .map(id => figma.variables.getVariableById(id))
-    .find(v => v && v.name === variableName) || null;
+  for (const id of targetCollection.variableIds) {
+    const v = await figma.variables.getVariableByIdAsync(id);
+    if (v && v.name === variableName) {
+      return v;
+    }
+  }
+
+  return null;
 }
